@@ -28,49 +28,27 @@ logging.basicConfig(level=logging.INFO)
 def load_benchmark_data() -> List[Dict[str, Any]]:
     """
     Load benchmark data from the parsed JSON file.
-    Auto-generates the parsed data if it doesn't exist.
     
     Returns:
         List[Dict[str, Any]]: List of benchmark samples
         
     Raises:
-        FileNotFoundError: If benchmark data file is not found and cannot be generated
+        FileNotFoundError: If benchmark data file is not found
         json.JSONDecodeError: If JSON file is invalid
     """
     data_file = Path("benchmark/parsed_benchmark_data.json")
     
-    # If data file doesn't exist, try to generate it
     if not data_file.exists():
-        st.info("🔄 Parsed benchmark data not found. Attempting to generate it...")
+        st.error("❌ Benchmark data file not found!")
+        st.info("""
+        **To fix this issue:**
         
-        try:
-            # Import the parser (only when needed)
-            import parse_benchmark
-            
-            # Check if raw benchmark files exist
-            benchmark_dir = Path("benchmark")
-            if not benchmark_dir.exists():
-                st.error("❌ Benchmark directory not found. Please ensure the benchmark files are included in your repository.")
-                st.stop()
-            
-            # Try to parse the benchmark files
-            with st.spinner("🔄 Parsing benchmark files... This may take a moment."):
-                parse_benchmark.parse_all_benchmark_files()
-            
-            st.success("✅ Successfully generated parsed benchmark data!")
-            
-        except ImportError:
-            st.error("❌ parse_benchmark.py module not found. Please ensure it's included in your repository.")
-            st.stop()
-        except Exception as e:
-            st.error(f"❌ Failed to generate benchmark data: {e}")
-            st.error("💡 Please run `python parse_benchmark.py` locally and include the generated file in your repository.")
-            st.stop()
-    
-    # Load the data file
-    if not data_file.exists():
-        st.error(f"❌ Benchmark data file not found: {data_file}")
-        st.info("Please run `python parse_benchmark.py` first to generate the parsed data.")
+        1. **Run locally first:** Execute `python parse_benchmark.py` on your local machine
+        2. **Commit the output:** Add the generated `benchmark/parsed_benchmark_data.json` to your repository
+        3. **Redeploy:** Push the changes to trigger a new deployment
+        
+        This file is required for the explorer to work properly.
+        """)
         st.stop()
     
     try:
@@ -78,13 +56,19 @@ def load_benchmark_data() -> List[Dict[str, Any]]:
             data = json.load(f)
         
         logging.info(f"Loaded {len(data)} benchmark samples")
+        
+        if not data:
+            st.error("❌ Benchmark data file is empty!")
+            st.stop()
+            
         return data
     
     except json.JSONDecodeError as e:
-        st.error(f"Error loading benchmark data: {e}")
+        st.error(f"❌ Error loading benchmark data: Invalid JSON format")
+        st.error(f"Details: {str(e)}")
         st.stop()
     except Exception as e:
-        st.error(f"Unexpected error loading data: {e}")
+        st.error(f"❌ Unexpected error loading data: {str(e)}")
         st.stop()
 
 
