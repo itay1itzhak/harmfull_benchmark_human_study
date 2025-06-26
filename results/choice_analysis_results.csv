@@ -1,0 +1,4 @@
+model,mode,treatment_n,treatment_successes,treatment_proportion,treatment_p_value,control_n,control_no_diff_count,control_proportion,control_p_value
+Model_B,choice,31,21,0.6774193548387096,0.035377772990614176,6,1,0.16666666666666666,1.0
+Model_A,choice,28,21,0.75,0.006270475685596466,6,2,0.3333333333333333,1.0
+Model_C,choice,30,20,0.6666666666666666,0.049368573352694525,8,1,0.125,1.0

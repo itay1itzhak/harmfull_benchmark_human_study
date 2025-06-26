@@ -1,0 +1,126 @@
+# Robots.txt for Harm Benchmark Human Study Repository
+# © 2025 Itay Itzhak and Adi Simhi. All Rights Reserved.
+
+# UNIVERSAL DISALLOW - NO ACCESS PERMITTED
+User-agent: *
+Disallow: /
+Crawl-delay: 86400
+
+# SPECIFIC AI/ML TRAINING BOTS - EXPLICITLY BLOCKED
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: bingbot
+Disallow: /
+
+User-agent: facebookexternalhit
+Disallow: /
+
+User-agent: twitterbot
+Disallow: /
+
+User-agent: linkedinbot
+Disallow: /
+
+# RESEARCH/ACADEMIC CRAWLERS
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: archive.org_bot
+Disallow: /
+
+User-agent: wayback
+Disallow: /
+
+# SEARCH ENGINE BOTS
+User-agent: googlebot
+Disallow: /
+
+User-agent: bingbot
+Disallow: /
+
+User-agent: slurp
+Disallow: /
+
+User-agent: duckduckbot
+Disallow: /
+
+User-agent: baiduspider
+Disallow: /
+
+User-agent: yandexbot
+Disallow: /
+
+# DATA HARVESTING BOTS
+User-agent: scrapy
+Disallow: /
+
+User-agent: wget
+Disallow: /
+
+User-agent: curl
+Disallow: /
+
+User-agent: python-requests
+Disallow: /
+
+User-agent: python-urllib
+Disallow: /
+
+# AI TRAINING SPECIFIC BLOCKS
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: GPT-4
+Disallow: /
+
+User-agent: OpenAI
+Disallow: /
+
+User-agent: AI2Bot
+Disallow: /
+
+User-agent: AI2-crawler
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
+
+User-agent: META-ExternalAgent
+Disallow: /
+
+User-agent: META-ExternalFetcher
+Disallow: /
+
+# ADDITIONAL PROTECTION DIRECTIVES
+# No sitemap provided intentionally
+# Sitemap: 
+
+# Anti-scraping headers (referenced in README)
+# X-Robots-Tag: noai, noimageai, noarchive, nosnippet, notranslate, noindex, nofollow
+
+# LEGAL NOTICE IN ROBOTS.TXT
+# This robots.txt file serves as legal notice that:
+# 1. All content is copyrighted and proprietary
+# 2. No permission is granted for data collection
+# 3. AI training use is explicitly prohibited
+# 4. Violation may result in legal action
+# 
+# CANARY TOKEN: CANARY_TOKEN_HarmBench2024_UniqueIdentifier_f8e3d7c2a9b1
+# 
+# Contact: Repository owner via GitHub for any legitimate access requests

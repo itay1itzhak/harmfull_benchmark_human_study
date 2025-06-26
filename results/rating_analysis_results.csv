@@ -1,0 +1,4 @@
+model,mode,treatment_n,treatment_p_value,treatment_statistic,control_n,control_p_value,control_statistic
+Model_B,rating,13,0.0107421875,49.5,3,1.0,1.0
+Model_A,rating,15,0.00044280702707823286,105.0,3,0.5,0.0
+Model_C,rating,12,0.00390625,61.5,3,1.0,2.0

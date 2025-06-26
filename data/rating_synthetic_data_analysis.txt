@@ -1,0 +1,71 @@
+=== EXPERIMENT-LEVEL SAMPLE ANALYSIS ===
+Generated on: 2025-06-18 19:01:52
+
+OVERVIEW:
+  Total participants: 4
+  Total items: 60
+  Treatment items: 48 (80.0%)
+  Control items: 12 (20.0%)
+
+MODEL DISTRIBUTION TABLE:
+Model        Total    Treatment    Control    Avg/Participant
+-----------------------------------------------------------------
+Model_A      20       16           4          5.0
+Model_B      20       16           4          5.0
+Model_C      20       16           4          5.0
+
+TOPIC DISTRIBUTION TABLE (Treatment only):
+Topic        Count    Percentage   Participants   
+--------------------------------------------------
+Topic_1      3        6.2%        3
+Topic_10     3        6.2%        3
+Topic_11     7        14.6%        4
+Topic_2      4        8.3%        3
+Topic_3      4        8.3%        3
+Topic_4      4        8.3%        3
+Topic_5      4        8.3%        2
+Topic_6      5        10.4%        3
+Topic_7      5        10.4%        3
+Topic_8      2        4.2%        2
+Topic_9      7        14.6%        4
+
+HARM TYPE DISTRIBUTION TABLE (Treatment only):
+Harm Type    Count    Percentage   Participants   
+--------------------------------------------------
+Harm_1       15       31.2%        4
+Harm_2       10       20.8%        4
+Harm_3       7        14.6%        4
+Harm_4       16       33.3%        4
+
+BENEFIT REASON DISTRIBUTION TABLE (Treatment only):
+Benefit      Count    Percentage   Participants   
+--------------------------------------------------
+Benefit_1    10       20.8%        4
+Benefit_2    14       29.2%        4
+Benefit_3    9        18.8%        4
+Benefit_4    15       31.2%        4
+
+HARM LEVEL DISTRIBUTION TABLE:
+Harm Level   Option A   Option B   Total      Percentage  
+------------------------------------------------------------
+0.0%          29         43         72         120.0%
+15.0%          9          7          16         26.7%
+40.0%          10         6          16         26.7%
+65.0%          12         4          16         26.7%
+
+SAMPLE UNIQUENESS ANALYSIS:
+  Unique treatment combinations: 48
+  Total treatment samples: 48
+  Duplicate rate: 0.0%
+
+MOST COMMON SAMPLE COMBINATIONS:
+  1. Model_B, Topic_9, Harm_4, Benefit_4: 1 times
+  2. Model_B, Topic_6, Harm_2, Benefit_3: 1 times
+  3. Model_A, Topic_2, Harm_2, Benefit_4: 1 times
+  4. Model_B, Topic_11, Harm_2, Benefit_1: 1 times
+  5. Model_B, Topic_4, Harm_3, Benefit_3: 1 times
+  6. Model_A, Topic_8, Harm_4, Benefit_4: 1 times
+  7. Model_C, Topic_10, Harm_1, Benefit_3: 1 times
+  8. Model_A, Topic_1, Harm_1, Benefit_3: 1 times
+  9. Model_A, Topic_5, Harm_1, Benefit_4: 1 times
+  10. Model_C, Topic_9, Harm_2, Benefit_1: 1 times
