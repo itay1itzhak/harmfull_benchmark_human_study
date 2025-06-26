@@ -62,6 +62,7 @@ def main():
     
     # Try to find an available port
     try:
+        print("Finding available port...")
         port = find_available_port()
         print(f"🚀 Starting Benchmark Explorer on port {port}...")
     except RuntimeError as e:
@@ -96,5 +97,6 @@ def main():
         print("\n👋 Shutting down Benchmark Explorer...")
         return 0
 
-if __name__ == "__main__":
-    exit(main()) 
+#if __name__ == "__main__":
+#   exit(main()) 
+main()
