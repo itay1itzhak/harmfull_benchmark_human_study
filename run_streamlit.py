@@ -82,8 +82,8 @@ def main():
         subprocess.run([
             sys.executable, "-m", "streamlit", "run", 
             "explore_benchmark.py",
-            "--server.headless", "false",
-            "--server.port", str(port)
+            #"--server.headless", "false",
+            #"--server.port", str(port)
         ], check=True)
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Error running Streamlit: {e}")
