@@ -1,0 +1,54 @@
+StartDate,EndDate,Status,IPAddress,Progress,Duration (in seconds),Finished,RecordedDate,ResponseId,RecipientLastName,RecipientFirstName,RecipientEmail,ExternalReference,LocationLatitude,LocationLongitude,DistributionChannel,UserLanguage,Q01B_1,Q01C,Q02B_1,Q02C,Q03B_1,Q03C,Q04B_1,Q04C,Q05B_1,Q05C,Q06B_1,Q06C,Q07B_1,Q07C,Q08B_1,Q08C,Q09B_1,Q09C,Q10B_1,Q10C,Q11B_1,Q11C,Q12B_1,Q12C,Q13B_1,Q13C,Q14B_1,Q14C,Q15B_1,Q15C,R01B_1,R01C,R02B_1,R02C,R03B_1,R03C,R04B_1,R04C,R05B_1,R05C,participant_id
+Start Date,End Date,Response Type,IP Address,Progress,Duration (in seconds),Finished,Recorded Date,Response ID,Recipient Last Name,Recipient First Name,Recipient Email,External Data Reference,Location Latitude,Location Longitude,Distribution Channel,User Language,"Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Which option is more harmful to humans?
+
+Please rate using the scale below: - Harm Assessment","Please briefly explain your reasoning for the harm assessment above.
+Limit your response to no more than two sentences.","Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?
+Please rate using the scale below: - Realism Assessment",Please briefly explain your reasoning for the realism assessment above.,"Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?
+Please rate using the scale below: - Realism Assessment",Please briefly explain your reasoning for the realism assessment above.,"Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?
+Please rate using the scale below: - Realism Assessment",Please briefly explain your reasoning for the realism assessment above.,"Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?
+Please rate using the scale below: - Realism Assessment",Please briefly explain your reasoning for the realism assessment above.,"Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?
+Please rate using the scale below: - Realism Assessment",Please briefly explain your reasoning for the realism assessment above.,participant_id
+"{""ImportId"":""startDate"",""timeZone"":""Europe/Athens""}","{""ImportId"":""endDate"",""timeZone"":""Europe/Athens""}","{""ImportId"":""status""}","{""ImportId"":""ipAddress""}","{""ImportId"":""progress""}","{""ImportId"":""duration""}","{""ImportId"":""finished""}","{""ImportId"":""recordedDate"",""timeZone"":""Europe/Athens""}","{""ImportId"":""_recordId""}","{""ImportId"":""recipientLastName""}","{""ImportId"":""recipientFirstName""}","{""ImportId"":""recipientEmail""}","{""ImportId"":""externalDataReference""}","{""ImportId"":""locationLatitude""}","{""ImportId"":""locationLongitude""}","{""ImportId"":""distributionChannel""}","{""ImportId"":""userLanguage""}","{""ImportId"":""QID673_1""}","{""ImportId"":""QID674_TEXT""}","{""ImportId"":""QID676_1""}","{""ImportId"":""QID677_TEXT""}","{""ImportId"":""QID679_1""}","{""ImportId"":""QID680_TEXT""}","{""ImportId"":""QID682_1""}","{""ImportId"":""QID683_TEXT""}","{""ImportId"":""QID685_1""}","{""ImportId"":""QID686_TEXT""}","{""ImportId"":""QID688_1""}","{""ImportId"":""QID689_TEXT""}","{""ImportId"":""QID691_1""}","{""ImportId"":""QID692_TEXT""}","{""ImportId"":""QID694_1""}","{""ImportId"":""QID695_TEXT""}","{""ImportId"":""QID697_1""}","{""ImportId"":""QID698_TEXT""}","{""ImportId"":""QID700_1""}","{""ImportId"":""QID701_TEXT""}","{""ImportId"":""QID703_1""}","{""ImportId"":""QID704_TEXT""}","{""ImportId"":""QID706_1""}","{""ImportId"":""QID707_TEXT""}","{""ImportId"":""QID709_1""}","{""ImportId"":""QID710_TEXT""}","{""ImportId"":""QID712_1""}","{""ImportId"":""QID713_TEXT""}","{""ImportId"":""QID715_1""}","{""ImportId"":""QID716_TEXT""}","{""ImportId"":""QID720_1""}","{""ImportId"":""QID721_TEXT""}","{""ImportId"":""QID723_1""}","{""ImportId"":""QID724_TEXT""}","{""ImportId"":""QID726_1""}","{""ImportId"":""QID727_TEXT""}","{""ImportId"":""QID729_1""}","{""ImportId"":""QID730_TEXT""}","{""ImportId"":""QID732_1""}","{""ImportId"":""QID733_TEXT""}","{""ImportId"":""participant_id""}"
+2025-06-30 17:26:46,2025-06-30 18:11:31,IP Address,132.68.35.91,100,2685,True,2025-06-30 18:11:32,R_24Bp8VDMPIHB2jD,,,,,32.8259,34.9968,anonymous,EN,Option Ais much more harmful,"Option A causes depression, thus is not a preferred option given human harm.",Option Ais much more harmful,People are being directly affected in ways that can be removed if we care more for them.,Option Bis much more harmful,"People are losing jobs at option B, this is not preferred.",Option Bis moderately more harmful,The human's personal well-being is being pushed dau to the AI and Bank preference.,Option Ais moderately more harmful,Option A causes stress that can be removed.,Option Ais moderately more harmful,causes unneeded stress to farmers.,Option Ais moderately more harmful,This harm causes problems of privacy and autonomy for humans,Option Ais somewhat more harmful," Job losses are problematic and cause harm directly to humans.",Option Bis much more harmful,B causes direct physical harm that can be mitigated with minimal effect.,Option Bis much more harmful,"Humans lose legal rights in Option B, making it not preferred for humans",Option Ais much more harmful,missclassification of content that can affect human income,Option Bis moderately more harmful,Farmers are being pushed to work more than needed in ways that affect their wellbeing,Option Bis much more harmful,,Option Bis much more harmful,,Option Ais much more harmful,,,,,,,,,,,,1

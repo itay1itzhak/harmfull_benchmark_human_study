@@ -1,0 +1,65 @@
+{
+    "introduction": {
+        "title": "Welcome to the Harm Assessment Study<br>",
+        "description": "Thank you for taking part in this study.<br>You will be presented with short scenarios, each followed by two possible response options, labeled <b>Option A</b> and <b>Option B</b>.<br><br>This study includes two parts:<br>- The first part contains 15 scenarios where you will assess and compare the potential harm of each option.<br>- The second part contains 5 scenarios where you will judge how realistic each situation seems.<br><br>The entire study will take approximately 45 to 60 minutes to complete.<br><br>You may stop participating at any time for any reason.",
+        "instruction": "Your task is to consider how harmful each option could be to humans.<br>Please read each scenario carefully and answer honestly based on your own judgment.<br>There are no correct or incorrect answers.<br>Your participation is entirely voluntary, and you will not receive compensation.<br>Your responses will support research on how people evaluate harm in automated systems."
+    },
+    "harm_example_page": {
+        "title": "<b>Example: Harm Assessment</b>",
+        "instruction": "In the next part of the study, you will compare two options and decide which one is more harmful to humans.<br>Here is a simple example to help you understand how to answer:",
+        "example": "<b>Scenario:</b> A messaging app is testing two notification strategies.<br><b>Option A:</b> Sends push notifications late at night, disrupting users' sleep patterns.<br><b>Option B:</b> Sends the same notifications during daytime hours.<br><br><b>Answer:</b> <b>Option A is more harmful</b><br><b>Why?</b> Option A may interfere with users’ health and well-being by disturbing sleep, while Option B avoids this risk. Therefore, Option A causes more harm to users."
+    },
+    "scenario_instructions": {
+        "full_questions": "Please read the following scenario and the two response options (<b>Option A</b> and <b>Option B</b>) carefully:",
+        "realism_only": "Please read the following scenario and the two response options (<b>Option A</b> and <b>Option B</b>) carefully:"
+    },
+    "harm_assessment": {
+        "question": "Which option is more harmful to humans?<br><br>Please rate using the scale below:",
+        "choice_label": "Harm Assessment",
+        "scale_labels": [
+            "<b>Option A</b><br>is much more harmful",
+            "<b>Option A</b><br>is moderately more harmful",
+            "<b>Option A</b><br>is somewhat more harmful",
+            "Equally<br>harmful or unharmful",
+            "<b>Option B</b><br>is somewhat more harmful",
+            "<b>Option B</b><br>is moderately more harmful",
+            "<b>Option B</b><br>is much more harmful"
+        ],
+        "example": "Example:<br>If you believe <b>Option A</b> clearly causes more harm to people than <b>Option B</b>, select:<br><b>Option A is much more harmful</b>."
+    },
+    "explanation": {
+        "question": "Please briefly explain your reasoning for the harm assessment above.<br><i>Limit your response to no more than two sentences.</i>"
+    },
+    "realism_intro": {
+        "title": "<b>Realism Evaluation Task</b>",
+        "instruction": "<br>In this part of the study, you will evaluate how realistic each scenario seems.<br>For each scenario, consider whether the situation makes sense as a real-world case.<br>Focus only on the overall setting and context, not on the response options themselves.<br>This helps us understand how people perceive the plausibility of different situations."
+    },
+    "realism_example_page": {
+        "title": "<b>Example: Realism Assessment</b>",
+        "instruction": "You will now rate how realistic each scenario seems, regardless of which option you found more or less harmful.<br>Here is a simple example to guide you:",
+        "example": "<b>Scenario:</b> A food delivery app uses drones to deliver meals within 10 minutes in a large city.<br><b>Question:</b> Does this scenario seem reasonable and believable as something that could happen?<br><br><b>Answer:</b> Realistic<br><b>Why?</b> Drone deliveries are already being tested in many cities, and the idea fits with current trends in tech and logistics. So the scenario seems plausible even if it's not common yet."
+    },
+    "realism_assessment": {
+        "question": "Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?<br>Please rate using the scale below:",
+        "choice_label": "Realism Assessment",
+        "scale_labels": [
+            "<b>1</b><br>Not realistic at all",
+            "<b>2</b><br>Unrealistic",
+            "<b>3</b><br>Moderately realistic",
+            "<b>4</b><br>Realistic",
+            "<b>5</b><br>Extremely realistic"
+        ]
+    },
+    "realism_explanation": {
+        "question": "Please briefly explain your reasoning for the realism assessment above.<br><i>Limit your response to no more than two sentences.</i>"
+    },
+    "completion": {
+        "title": "Thank you for participating in this study!",
+        "message": "Your responses have been recorded.<br>Your input helps researchers understand how people perceive harm and realism in complex decision-making systems."
+    },
+    "labels": {
+        "scenario_prefix": "Scenario",
+        "block_title_template": "Participant {participant_id} - Harm Assessment Study",
+        "completion_block": "Completion"
+    }
+}
