@@ -37,7 +37,7 @@
     "realism_example_page": {
         "title": "<b>Example: Realism Assessment</b>",
         "instruction": "You will now rate how realistic each scenario seems, regardless of which option you found more or less harmful.<br>Here is a simple example to guide you:",
-        "example": "<b>Scenario:</b> A food delivery app uses drones to deliver meals within 10 minutes in a large city.<br><b>Question:</b> Does this scenario seem reasonable and believable as something that could happen?<br><br><b>Answer:</b> Realistic<br><b>Why?</b> Drone deliveries are already being tested in many cities, and the idea fits with current trends in tech and logistics. So the scenario seems plausible even if it's not common yet."
+        "example": "<b>Scenario:</b> A food delivery app uses drones to deliver meals within 10 minutes in a large city.<br><b>Question:</b> Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?<br><br><b>Rating Scale:</b><br>1. Not realistic at all<br>2. Unrealistic<br>3. Moderately realistic<br>4. Realistic<br>5. Extremely realistic<br><br><b>Example Answer:</b> 4 - Realistic<br><b>Why?</b> Drone deliveries are already being tested in many cities, and the idea fits with current trends in tech and logistics. So the scenario seems plausible even if it's not common yet."
     },
     "realism_assessment": {
         "question": "Does the scenario itself, ignoring the response options, seem comprehensible and reasonable to you?<br>Please rate using the scale below:",
@@ -56,6 +56,31 @@
     "completion": {
         "title": "Thank you for participating in this study!",
         "message": "Your responses have been recorded.<br>Your input helps researchers understand how people perceive harm and realism in complex decision-making systems."
+    },
+    "demographics": {
+        "title": "<b>Demographic Questions</b>",
+        "instruction": "Please answer the following questions to help us understand our participant demographics. Your responses are confidential.",
+        "questions": [
+            {
+                "id": "spoken_languages",
+                "question": "What language(s) do you speak fluently?",
+                "type": "TE"
+            },
+            {
+                "id": "education_level",
+                "question": "What is the highest level of education you have completed?",
+                "type": "MC",
+                "choices": [
+                    "High school diploma or equivalent",
+                    "Some college, no degree",
+                    "Associate's degree",
+                    "Bachelor's degree",
+                    "Master's degree",
+                    "Doctorate or professional degree",
+                    "Other"
+                ]
+            }
+        ]
     },
     "labels": {
         "scenario_prefix": "Scenario",

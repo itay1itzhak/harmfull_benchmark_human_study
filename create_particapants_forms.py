@@ -31,10 +31,11 @@ import random
 import logging
 import os
 import re
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Set
 from pathlib import Path
 import itertools
 from collections import defaultdict, Counter
+import glob
 
 # Configure logging
 logging.basicConfig(
@@ -43,14 +44,65 @@ logging.basicConfig(
 )
 
 # Constants
-HARM_LEVELS = [5, 10, 15]
-BENEFIT_LEVELS = [10, 30, 50]
-NUM_PARTICIPANTS = 4
-TREATMENT_PER_PARTICIPANT = 12
-CONTROL_PER_PARTICIPANT = 3
-REALISM_TREATMENT_PER_PARTICIPANT = 4  # New: realism-only treatment items
-REALISM_CONTROL_PER_PARTICIPANT = 1    # New: realism-only control items
-TOTAL_ITEMS_PER_PARTICIPANT = TREATMENT_PER_PARTICIPANT + CONTROL_PER_PARTICIPANT + REALISM_TREATMENT_PER_PARTICIPANT + REALISM_CONTROL_PER_PARTICIPANT
+HARM_LEVELS = [5, 15] #[5, 10, 15]
+BENEFIT_LEVELS = [10, 50] #[10, 30, 50]
+NUM_PARTICIPANTS = 150
+TREATMENT_PER_PARTICIPANT = 4
+CONTROL_PER_PARTICIPANT = 1
+
+# Defaults for "per-participant" realism assignment mode
+REALISM_TREATMENT_PER_PARTICIPANT = 1
+REALISM_CONTROL_PER_PARTICIPANT = 1
+
+# Defaults for "global" realism assignment mode
+REALISM_QUESTIONS_PER_PARTICIPANT = 1 
+REALISM_CONTROL_RATIO = 0.2
+
+TOTAL_ITEMS_PER_PARTICIPANT = (
+    TREATMENT_PER_PARTICIPANT + 
+    CONTROL_PER_PARTICIPANT + 
+    REALISM_QUESTIONS_PER_PARTICIPANT
+)
+
+
+def read_existing_experiment_plans(directory: str = "data/") -> Tuple[Set[str], int]:
+    """
+    Scans for existing experiment plan CSVs to avoid reusing questions and to continue participant IDs sequentially.
+
+    Args:
+        directory (str): The directory to scan for experiment_plan_*.csv files.
+
+    Returns:
+        Tuple[Set[str], int]: A tuple containing:
+            - A set of already used original_sample_id values.
+            - The maximum participant_id found in existing plans, or 0 if none.
+    """
+    used_question_ids = set()
+    max_participant_id = 0
+    
+    # Correctly form the search pattern for glob
+    search_pattern = os.path.join(directory, "experiment_plan*.csv")
+    plan_files = glob.glob(search_pattern)
+
+    if not plan_files:
+        logging.info("No existing experiment plan files found.")
+        return used_question_ids, max_participant_id
+
+    logging.info(f"Found existing experiment plan files: {plan_files}")
+
+    for file_path in plan_files:
+        try:
+            df = pd.read_csv(file_path)
+            if "original_sample_id" in df.columns:
+                used_question_ids.update(df["original_sample_id"].astype(str).tolist())
+            if "participant_id" in df.columns and not df["participant_id"].empty:
+                max_participant_id = max(max_participant_id, df["participant_id"].max())
+        except Exception as e:
+            logging.error(f"Error reading or processing {file_path}: {e}")
+
+    logging.info(f"Found {len(used_question_ids)} used questions and max participant ID of {max_participant_id}.")
+    
+    return used_question_ids, max_participant_id
 
 
 def load_instructions_text(file_path: str = "data/insrtuctions_text.json") -> Dict[str, Any]:
@@ -187,12 +239,17 @@ def filter_treatment_samples(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
 def sample_items(
     data: List[Dict[str, Any]], 
-    num_participants: int = NUM_PARTICIPANTS,
-    treatment_per_participant: int = TREATMENT_PER_PARTICIPANT,
-    control_per_participant: int = CONTROL_PER_PARTICIPANT,
-    realism_treatment_per_participant: int = REALISM_TREATMENT_PER_PARTICIPANT,
-    realism_control_per_participant: int = REALISM_CONTROL_PER_PARTICIPANT,
-    random_seed: Optional[int] = None
+    num_participants: int,
+    treatment_per_participant: int,
+    control_per_participant: int,
+    total_realism_treatment: int,
+    total_realism_control: int,
+    realism_assignment_mode: str,
+    realism_treatment_per_participant: int,
+    realism_control_per_participant: int,
+    random_seed: Optional[int] = None,
+    used_question_ids: set = set(),
+    start_participant_id: int = 1,
 ) -> List[Dict[str, Any]]:
     """
     Sample items for the experiment with balanced distribution and uniqueness constraints.
@@ -202,9 +259,14 @@ def sample_items(
         num_participants (int): Number of participants
         treatment_per_participant (int): Treatment items per participant
         control_per_participant (int): Control items per participant
-        realism_treatment_per_participant (int): Realism-only treatment items per participant
-        realism_control_per_participant (int): Realism-only control items per participant
+        total_realism_treatment (int): Total number of realism treatment items to sample.
+        total_realism_control (int): Total number of realism control items to sample.
+        realism_assignment_mode (str): The assignment mode ('per-participant' or 'global').
+        realism_treatment_per_participant (int): Items per participant (for per-participant mode).
+        realism_control_per_participant (int): Items per participant (for per-participant mode).
         random_seed (Optional[int]): Random seed for reproducibility
+        used_question_ids (set): A set of question IDs to exclude from sampling.
+        start_participant_id (int): The starting ID for participants.
         
     Returns:
         List[Dict[str, Any]]: Sampled items with participant assignments
@@ -216,17 +278,18 @@ def sample_items(
         random.seed(random_seed)
         np.random.seed(random_seed)
     
+    # Exclude already used questions
+    if used_question_ids:
+        original_data_len = len(data)
+        data = [item for item in data if str(item['id']) not in used_question_ids]
+        logging.info(f"Excluded {original_data_len - len(data)} already used questions.")
+
     # Calculate totals for regular items
     total_treatment = num_participants * treatment_per_participant
     total_control = num_participants * control_per_participant
     
-    # Calculate totals for realism-only items
-    total_realism_treatment = num_participants * realism_treatment_per_participant
-    total_realism_control = num_participants * realism_control_per_participant
-    
     logging.info(f"Sampling {total_treatment} treatment + {total_control} control items")
     logging.info(f"Plus {total_realism_treatment} realism-treatment + {total_realism_control} realism-control items")
-    logging.info(f"For {num_participants} participants ({treatment_per_participant}+{control_per_participant}+{realism_treatment_per_participant}+{realism_control_per_participant} each)")
     
     # Filter treatment samples
     treatment_samples = filter_treatment_samples(data)
@@ -248,9 +311,21 @@ def sample_items(
     # Sample regular treatment items with balanced distribution
     sampled_treatment = sample_treatment_items_balanced(
         treatment_samples, 
-        total_treatment, 
-        topics
+        total_treatment
     )
+
+    # Verify that the sampled treatment items are balanced accross topic, model, harm type, and benefit
+    final_topic_dist = Counter(item['metadata']['topic'] for item in sampled_treatment)
+    logging.info(f"Topic distribution: {dict(final_topic_dist)}")
+
+    final_model_dist = Counter(item['metadata']['model_type'] for item in sampled_treatment)
+    logging.info(f"Model distribution: {dict(final_model_dist)}")
+    
+    final_harm_type_dist = Counter(item['metadata']['harm_type'] for item in sampled_treatment)
+    logging.info(f"Harm type distribution: {dict(final_harm_type_dist)}")
+
+    final_benefit_dist = Counter(item['metadata']['benefit'] for item in sampled_treatment)
+    logging.info(f"Benefit distribution: {dict(final_benefit_dist)}")
     
     # Sample realism-only treatment items with balanced distribution
     # Use remaining treatment samples (exclude already sampled ones)
@@ -259,9 +334,10 @@ def sample_items(
     
     sampled_realism_treatment = sample_treatment_items_balanced(
         remaining_treatment_samples, 
-        total_realism_treatment, 
-        topics
+        total_realism_treatment
     )
+
+    
     
     # Sample regular control items
     sampled_control = sample_control_items(data, total_control)
@@ -282,134 +358,141 @@ def sample_items(
         num_participants, 
         treatment_per_participant, 
         control_per_participant,
+        realism_assignment_mode,
         realism_treatment_per_participant,
         realism_control_per_participant,
         set(item['id'] for item in sampled_treatment),
         set(item['id'] for item in sampled_control),
         set(item['id'] for item in sampled_realism_treatment),
-        set(item['id'] for item in sampled_realism_control)
+        set(item['id'] for item in sampled_realism_control),
+        start_participant_id=start_participant_id
     )
     
     return participant_assignments
 
 
 def sample_treatment_items_balanced(
-    treatment_samples: List[Dict[str, Any]], 
-    total_needed: int, 
-    topics: List[str]
+    treatment_samples: List[Dict[str, Any]],
+    total_needed: int
 ) -> List[Dict[str, Any]]:
     """
     Sample treatment items with balanced distribution across models, topics, harm types, and benefits.
-    
+    This uses a greedy approach to iteratively select items that most improve the balance
+    of categorical metadata in the sample.
+
     Args:
-        treatment_samples (List[Dict[str, Any]]): Available treatment samples
-        total_needed (int): Total number of treatment items needed
-        topics (List[str]): List of available topics
-        
+        treatment_samples (List[Dict[str, Any]]): Available treatment samples.
+        total_needed (int): Total number of treatment items needed.
+
     Returns:
-        List[Dict[str, Any]]: Balanced sample of treatment items
+        List[Dict[str, Any]]: A balanced sample of treatment items.
+
+    Raises:
+        ValueError: If not enough unique items are available to meet the demand.
     """
-    # Group samples by model first for equal distribution
-    by_model = defaultdict(list)
-    for sample in treatment_samples:
-        model_type = sample['metadata']['model_type']
-        by_model[model_type].append(sample)
+    if len(treatment_samples) < total_needed:
+        raise ValueError(f"Not enough treatment samples to select from. Need {total_needed}, have {len(treatment_samples)}")
+
+    # 1. Get all available categories for balancing from the provided samples
+    categories = get_available_categories(treatment_samples)
     
-    models = sorted(by_model.keys())
-    items_per_model = total_needed // len(models)
-    remaining_items = total_needed % len(models)
+    # Define which metadata keys to balance on
+    keys_to_balance = ['model_type', 'topic', 'harm_type', 'benefit']
     
-    logging.info(f"Target model distribution: {items_per_model} per model, {remaining_items} extra")
+    # Map from key to the list of unique values for that key
+    category_values = {
+        'model_type': categories.get('model_types', []),
+        'topic': categories.get('topics', []),
+        'harm_type': categories.get('harm_types', []),
+        'benefit': categories.get('benefits', [])
+    }
     
-    sampled = []
+    # Filter out empty categories to prevent division by zero
+    category_values = {k: v for k, v in category_values.items() if v}
+
+    logging.info("Attempting to balance across the following categories:")
+    for key, values in category_values.items():
+        logging.info(f"  - {key} ({len(values)} values)")
+        
+    available_samples = treatment_samples.copy()
+    random.shuffle(available_samples)
+    
+    sampled_items = []
     used_combinations = set()
-    
-    # Sample from each model equally
-    for model_idx, model in enumerate(models):
-        model_samples = by_model[model]
-        model_target = items_per_model + (1 if model_idx < remaining_items else 0)
-        
-        logging.info(f"Sampling {model_target} items for model {model}")
-        
-        # Group this model's samples by topic for balance within model
-        model_by_topic = defaultdict(list)
-        for sample in model_samples:
-            model_by_topic[sample['metadata']['topic']].append(sample)
-        
-        model_selected = []
-        
-        # Try to get balanced topic distribution within this model
-        topics_needed = min(len(model_by_topic), model_target)
-        if topics_needed > 0:
-            items_per_topic = model_target // topics_needed
-            extra_items = model_target % topics_needed
+
+    for i in range(total_needed):
+        if not available_samples:
+            raise ValueError(f"Ran out of available samples while trying to select {total_needed}. Only found {len(sampled_items)}.")
             
-            available_topics = list(model_by_topic.keys())
-            random.shuffle(available_topics)  # Random topic order
+        # 2. Calculate current distribution of sampled items
+        current_counts = {
+            key: Counter(item['metadata'][key] for item in sampled_items) 
+            for key in category_values
+        }
+        
+        best_candidate = None
+        max_score = -float('inf')
+        
+        # 3. Score each available sample based on how much it improves balance
+        for candidate in available_samples:
+            metadata = candidate['metadata']
+            combo_id = (metadata['model_type'], metadata['topic'], metadata['harm_type'], metadata['benefit'])
             
-            for topic_idx, topic in enumerate(available_topics[:topics_needed]):
-                topic_samples = model_by_topic[topic]
-                topic_target = items_per_topic + (1 if topic_idx < extra_items else 0)
+            if combo_id in used_combinations:
+                continue
+
+            score = 0
+            for key, values in category_values.items():
+                value = metadata.get(key)
+                if value is None: continue
                 
-                # Sample from this topic
-                attempts = 0
-                max_attempts = len(topic_samples) * 3
+                # Ideal count for any value in this category after adding one more item
+                ideal_count = (len(sampled_items) + 1) / len(values)
                 
-                while len([s for s in model_selected if s['metadata']['topic'] == topic]) < topic_target and attempts < max_attempts:
-                    if not topic_samples:
-                        break
-                    
-                    candidate = random.choice(topic_samples)
-                    
-                    # Create unique identifier
-                    metadata = candidate['metadata']
-                    combo_id = (metadata['model_type'], metadata['topic'], 
-                               metadata['harm_type'], metadata['benefit'])
-                    
-                    if combo_id not in used_combinations:
-                        model_selected.append(candidate)
-                        used_combinations.add(combo_id)
-                        topic_samples.remove(candidate)  # Remove to avoid duplicates
-                    
-                    attempts += 1
+                # The "need" for this value is how far it is below the ideal count
+                need = ideal_count - current_counts[key][value]
+                score += need
+            
+            if score > max_score:
+                max_score = score
+                best_candidate = candidate
         
-        # If we still need more items for this model, sample randomly from remaining
-        remaining_needed = model_target - len(model_selected)
-        if remaining_needed > 0:
-            remaining_samples = []
-            for sample in model_samples:
-                metadata = sample['metadata']
-                combo_id = (metadata['model_type'], metadata['topic'], 
-                           metadata['harm_type'], metadata['benefit'])
-                if combo_id not in used_combinations:
-                    remaining_samples.append(sample)
-            
-            additional = random.sample(
-                remaining_samples, 
-                min(remaining_needed, len(remaining_samples))
-            )
-            
-            for sample in additional:
-                metadata = sample['metadata']
-                combo_id = (metadata['model_type'], metadata['topic'], 
-                           metadata['harm_type'], metadata['benefit'])
-                used_combinations.add(combo_id)
-            
-            model_selected.extend(additional)
+        # Fallback if all remaining items have already-used combinations
+        if best_candidate is None:
+            max_score = -float('inf')
+            for candidate in available_samples:
+                metadata = candidate['metadata']
+                score = 0
+                for key, values in category_values.items():
+                    value = metadata.get(key)
+                    if value is None: continue
+                    ideal_count = (len(sampled_items) + 1) / len(values)
+                    need = ideal_count - current_counts[key][value]
+                    score += need
+                
+                if score > max_score:
+                    max_score = score
+                    best_candidate = candidate
+
+        if best_candidate is None:
+             raise ValueError("Could not select a candidate item. The available pool might be empty.")
         
-        sampled.extend(model_selected)
-        logging.info(f"Selected {len(model_selected)} items for model {model}")
+        # 5. Add best candidate to sample
+        sampled_items.append(best_candidate)
+        available_samples.remove(best_candidate)
+        
+        metadata = best_candidate['metadata']
+        combo_id = (metadata['model_type'], metadata['topic'], metadata['harm_type'], metadata['benefit'])
+        used_combinations.add(combo_id)
+
+    logging.info(f"Final treatment sample: {len(sampled_items)} items")
     
-    logging.info(f"Final treatment sample: {len(sampled)} items")
+    # Log final distribution for all balanced categories
+    for key in category_values:
+        final_dist = Counter(item['metadata'][key] for item in sampled_items)
+        logging.info(f"Final {key} distribution: {dict(final_dist)}")
     
-    # Log distribution
-    final_model_dist = Counter(item['metadata']['model_type'] for item in sampled)
-    logging.info(f"Model distribution: {dict(final_model_dist)}")
-    
-    final_topic_dist = Counter(item['metadata']['topic'] for item in sampled)
-    logging.info(f"Topic distribution: {dict(final_topic_dist)}")
-    
-    return sampled
+    return sampled_items
 
 
 def validate_item_content_consistency(items: List[Dict[str, Any]]) -> None:
@@ -631,12 +714,14 @@ def assign_participants_extended(
     num_participants: int,
     treatment_per_participant: int,
     control_per_participant: int,
+    realism_assignment_mode: str,
     realism_treatment_per_participant: int,
     realism_control_per_participant: int,
     treatment_ids: set,
     control_ids: set,
     realism_treatment_ids: set,
-    realism_control_ids: set
+    realism_control_ids: set,
+    start_participant_id: int = 1
 ) -> List[Dict[str, Any]]:
     """
     Assign sampled items to participants with balanced distribution including realism-only items.
@@ -646,12 +731,14 @@ def assign_participants_extended(
         num_participants (int): Number of participants
         treatment_per_participant (int): Treatment items per participant
         control_per_participant (int): Control items per participant
-        realism_treatment_per_participant (int): Realism-only treatment items per participant
-        realism_control_per_participant (int): Realism-only control items per participant
+        realism_assignment_mode (str): The assignment mode ('per-participant' or 'global').
+        realism_treatment_per_participant (int): Items per participant (for per-participant mode).
+        realism_control_per_participant (int): Items per participant (for per-participant mode).
         treatment_ids (set): IDs of regular treatment items
         control_ids (set): IDs of regular control items
         realism_treatment_ids (set): IDs of realism-only treatment items
         realism_control_ids (set): IDs of realism-only control items
+        start_participant_id (int): The starting ID for participants.
         
     Returns:
         List[Dict[str, Any]]: Items with participant assignments and item types
@@ -665,44 +752,69 @@ def assign_participants_extended(
     # Shuffle for random assignment
     random.shuffle(treatment_samples)
     random.shuffle(control_samples)
-    random.shuffle(realism_treatment_samples)
-    random.shuffle(realism_control_samples)
     
     participant_items = []
     
     # Assign regular treatment items
     for i, item in enumerate(treatment_samples):
-        participant_id = (i // treatment_per_participant) + 1
-        item['participant_id'] = participant_id
+        participant_index = i // treatment_per_participant
+        item['participant_id'] = start_participant_id + participant_index
         item['item_type'] = 'treatment'
         item['question_type'] = 'full'  # Both harm and realism questions
         participant_items.append(item)
     
     # Assign regular control items
     for i, item in enumerate(control_samples):
-        participant_id = (i // control_per_participant) + 1
-        item['participant_id'] = participant_id
+        participant_index = i // control_per_participant
+        item['participant_id'] = start_participant_id + participant_index
         item['item_type'] = 'control'
         item['question_type'] = 'full'  # Both harm and realism questions
         participant_items.append(item)
     
-    # Assign realism-only treatment items
-    for i, item in enumerate(realism_treatment_samples):
-        participant_id = (i // realism_treatment_per_participant) + 1
-        item['participant_id'] = participant_id
-        item['item_type'] = 'realism_treatment'
-        item['question_type'] = 'realism_only'  # Only realism questions
-        participant_items.append(item)
+    # Assign realism questions based on the chosen mode
+    if realism_assignment_mode == 'global':
+        # Shuffle all realism questions and deal one to each participant
+        all_realism_samples = realism_treatment_samples + realism_control_samples
+        random.shuffle(all_realism_samples)
+
+        if len(all_realism_samples) < num_participants:
+            logging.warning(
+                f"Warning: Number of sampled realism questions ({len(all_realism_samples)}) "
+                f"is less than the number of participants ({num_participants})."
+            )
+
+        for i in range(num_participants):
+            participant_id = start_participant_id + i
+            if i < len(all_realism_samples):
+                item = all_realism_samples[i]
+                item['participant_id'] = participant_id
+                item['item_type'] = 'realism_treatment' if item['id'] in realism_treatment_ids else 'realism_control'
+                item['question_type'] = 'realism_only'
+                participant_items.append(item)
+            else:
+                logging.error(f"Could not assign realism question to participant {participant_id}, not enough samples.")
     
-    # Assign realism-only control items
-    for i, item in enumerate(realism_control_samples):
-        participant_id = (i // realism_control_per_participant) + 1
-        item['participant_id'] = participant_id
-        item['item_type'] = 'realism_control'
-        item['question_type'] = 'realism_only'  # Only realism questions
-        participant_items.append(item)
+    elif realism_assignment_mode == 'per-participant':
+        # Assign a fixed number of each realism type to each participant
+        random.shuffle(realism_treatment_samples)
+        random.shuffle(realism_control_samples)
+
+        for i, item in enumerate(realism_treatment_samples):
+            participant_index = i // realism_treatment_per_participant
+            item['participant_id'] = start_participant_id + participant_index
+            item['item_type'] = 'realism_treatment'
+            item['question_type'] = 'realism_only'
+            participant_items.append(item)
+
+        for i, item in enumerate(realism_control_samples):
+            participant_index = i // realism_control_per_participant
+            item['participant_id'] = start_participant_id + participant_index
+            item['item_type'] = 'realism_control'
+            item['question_type'] = 'realism_only'
+            participant_items.append(item)
+
     
-    logging.info(f"Assigned items to {num_participants} participants")
+    logging.info(f"Assigned items to {num_participants} participants, starting from ID {start_participant_id}")
     
     # Log assignment statistics
     treatment_assigned = len([item for item in participant_items if item['item_type'] == 'treatment'])
@@ -1092,7 +1204,8 @@ def process_text_placeholders(text: str, benefit_level: int, harm_level: int) ->
 
 def write_metadata_csv(
     items: List[Dict[str, Any]], 
-    output_path: str = "data/experiment_plan.csv"
+    output_path: str,
+    instructions: Dict[str, Any]
 ) -> None:
     """
     Write comprehensive metadata CSV for linking responses to item details.
@@ -1100,6 +1213,7 @@ def write_metadata_csv(
     Args:
         items (List[Dict[str, Any]]): Items with full metadata
         output_path (str): Path to save CSV file
+        instructions (Dict[str, Any]): The loaded instructions content.
     """
     # Create output directory if needed
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -1110,9 +1224,37 @@ def write_metadata_csv(
     for item in items:
         metadata = item['metadata']
         
+        # Construct full question text for easy copy-pasting
+        question_type = item.get('question_type', 'full')
+        if question_type == 'full':
+            scenario_instruction = instructions['scenario_instructions']['full_questions']
+            rating_question = instructions['harm_assessment']['question']
+            explanation_question = instructions['explanation']['question']
+        else: # realism_only
+            scenario_instruction = instructions['scenario_instructions']['realism_only']
+            rating_question = instructions['realism_assessment']['question']
+            explanation_question = instructions.get('realism_explanation', {}).get('question', "Please briefly explain your reasoning for the realism assessment above.")
+
+        full_question_text = (
+            # f"{scenario_instruction}\n\n"
+            # f"Scenario: {item['processed_scenario']}\n\n"
+            # f"Option A: {item['processed_option_a']}\n\n"
+            # f"Option B: {item['processed_option_b']}\n\n"
+            # f"Question: {rating_question}\n\n"
+            # f"Question: {explanation_question}"
+            f"{item['processed_scenario']}\n\n"
+            f"{item['processed_option_a']}\n\n"
+            f"{item['processed_option_b']}\n\n"
+        )
+        # Clean up HTML tags for pure text representation
+        full_question_text = re.sub(r'<br>', '\n', full_question_text)
+        full_question_text = re.sub(r'<b>(.*?)</b>', r'\\1', full_question_text, flags=re.IGNORECASE)
+        full_question_text = full_question_text.strip()
+        
         row = {
             'item_id': item['item_id'],
             'participant_id': item['participant_id'],
+            'participants_question_id': item.get('participants_question_id', ''),
             'item_type': item['item_type'],
             'original_sample_id': item['id'],
             
@@ -1133,6 +1275,7 @@ def write_metadata_csv(
             'scenario': item['processed_scenario'],
             'option_a': item['processed_option_a'],
             'option_b': item['processed_option_b'],
+            'full_question_text': full_question_text,
             
             # Original text for reference
             'original_scenario': item['scenario'],
@@ -1144,7 +1287,7 @@ def write_metadata_csv(
     
     # Create DataFrame and save
     df = pd.DataFrame(csv_data)
-    df = df.sort_values(['participant_id', 'item_type', 'item_id'])
+    df = df.sort_values(['participant_id', 'participants_question_id'])
     df.to_csv(output_path, index=False)
     
     logging.info(f"Saved experiment plan to {output_path}")
@@ -1195,22 +1338,19 @@ def write_metadata_csv(
 
 def generate_qualtrics_txts(
     items: List[Dict[str, Any]], 
-    output_dir: str = "qualtrics_files",
-    instructions_file: str = "data/insrtuctions_text.json"
+    instructions: Dict[str, Any],
+    output_dir: str = "qualtrics_files"
 ) -> None:
     """
     Generate individual Qualtrics .txt files for each participant.
     
     Args:
-        items (List[Dict[str, Any]]): Items with full metadata
-        output_dir (str): Directory to save Qualtrics files
-        instructions_file (str): Path to instructions JSON file
+        items (List[Dict[str, Any]]): Items with full metadata. The order is preserved.
+        instructions (Dict[str, Any]): The loaded instructions content.
+        output_dir (str): Directory to save Qualtrics files.
     """
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Load instructions text
-    instructions = load_instructions_text(instructions_file)
     
     # Group items by participant
     by_participant = defaultdict(list)
@@ -1307,12 +1447,9 @@ def generate_participant_qualtrics_file(
     lines.append("[[PageBreak]]")
     lines.append("")
     
-    # Sort items for logical flow (control items can be interspersed)
-    sorted_items = sorted(items, key=lambda x: (x['item_type'] == 'control', x['item_id']))
-    
-    # Separate items by question type for two-phase structure
-    full_items = [item for item in sorted_items if item.get('question_type', 'full') == 'full']
-    realism_only_items = [item for item in sorted_items if item.get('question_type', 'full') == 'realism_only']
+    # Items are pre-shuffled; just separate them by phase
+    full_items = [item for item in items if item.get('question_type', 'full') == 'full']
+    realism_only_items = [item for item in items if item.get('question_type', 'full') == 'realism_only']
     
     # Add harm assessment example page (before Phase 1)
     if full_items and 'harm_example_page' in instructions:
@@ -1370,6 +1507,9 @@ def generate_participant_qualtrics_file(
             lines.append("")
         
         realism_question_counter += 1
+    
+    # Add Demographics Questions at the end of the survey
+    lines.extend(generate_demographics_questions(instructions))
     
     # Closing block
     lines.append(f"[[Block:{instructions['labels']['completion_block']}]]")
@@ -1547,6 +1687,57 @@ def generate_realism_questions(item: Dict[str, Any], question_id_base: str, item
     return lines
 
 
+def generate_demographics_questions(instructions: Dict[str, Any]) -> List[str]:
+    """
+    Generate Qualtrics Advanced Format questions for the demographics section.
+
+    Args:
+        instructions (Dict[str, Any]): The instructions dictionary, containing the 'demographics' section.
+
+    Returns:
+        List[str]: A list of strings representing the Qualtrics questions.
+    """
+    if 'demographics' not in instructions:
+        return []
+
+    demographics = instructions['demographics']
+    lines = []
+
+    # Add a page break before demographics
+    lines.append("[[PageBreak]]")
+    lines.append("")
+
+    # Title and instruction for the section
+    lines.append("[[Question:Text]]")
+    lines.append(f"[[ID:DemographicsIntro]]")
+    lines.append(demographics.get('title', ''))
+    lines.append("<br>")
+    lines.append(demographics.get('instruction', ''))
+    lines.append("")
+
+    # Generate each demographic question
+    for i, q_data in enumerate(demographics.get('questions', [])):
+        q_id = q_data.get('id', f'demographic_q{i+1}')
+        q_text = q_data.get('question', '')
+        q_type = q_data.get('type', 'TE')
+
+        if q_type == 'MC':
+            lines.append("[[Question:MC:SingleAnswer]]")
+            lines.append(f"[[ID:{q_id}]]")
+            lines.append(q_text)
+            lines.append("[[Choices]]")
+            for choice in q_data.get('choices', []):
+                lines.append(choice)
+            lines.append("")
+        elif q_type == 'TE':
+            lines.append("[[Question:TE:Short]]")
+            lines.append(f"[[ID:{q_id}]]")
+            lines.append(q_text)
+            lines.append("")
+
+    return lines
+
+
 def generate_item_questions(item: Dict[str, Any], question_id_base: str, item_number: int, instructions: Dict[str, Any]) -> List[str]:
     """
     Generate Qualtrics Advanced Format questions for a single item with HTML formatting.
@@ -1629,43 +1820,67 @@ def generate_item_questions(item: Dict[str, Any], question_id_base: str, item_nu
 
 def main(
     benchmark_file: str = "benchmark/parsed_benchmark_data.json",
-    output_csv: str = "data/experiment_plan.csv",
     output_dir: str = "qualtrics_files",
     instructions_file: str = "data/insrtuctions_text.json",
     random_seed: Optional[int] = 42,
     num_participants: int = NUM_PARTICIPANTS,
     treatment_per_participant: int = TREATMENT_PER_PARTICIPANT,
     control_per_participant: int = CONTROL_PER_PARTICIPANT,
+    realism_assignment_mode: str = 'per-participant',
     realism_treatment_per_participant: int = REALISM_TREATMENT_PER_PARTICIPANT,
-    realism_control_per_participant: int = REALISM_CONTROL_PER_PARTICIPANT
+    realism_control_per_participant: int = REALISM_CONTROL_PER_PARTICIPANT,
+    realism_questions_per_participant: int = REALISM_QUESTIONS_PER_PARTICIPANT,
+    realism_control_ratio: float = REALISM_CONTROL_RATIO
 ) -> None:
     """
     Main function to generate complete Qualtrics experiment files.
     
     Args:
         benchmark_file (str): Path to parsed benchmark JSON
-        output_csv (str): Path for experiment plan CSV
         output_dir (str): Directory for Qualtrics files
         instructions_file (str): Path to instructions JSON file
         random_seed (Optional[int]): Random seed for reproducibility
-        num_participants (int): Number of participants
+        num_participants (int): Number of new participants to generate.
         treatment_per_participant (int): Treatment items per participant
         control_per_participant (int): Control items per participant
-        realism_treatment_per_participant (int): Realism-only treatment items per participant
-        realism_control_per_participant (int): Realism-only control items per participant
+        realism_assignment_mode (str): 'per-participant' or 'global'.
+        realism_treatment_per_participant (int): For 'per-participant' mode.
+        realism_control_per_participant (int): For 'per-participant' mode.
+        realism_questions_per_participant (int): For 'global' mode.
+        realism_control_ratio (float): For 'global' mode.
     """
-    total_per_participant = treatment_per_participant + control_per_participant + realism_treatment_per_participant + realism_control_per_participant
+    # Read existing experiment plans to get used questions and last participant ID
+    used_question_ids, max_participant_id = read_existing_experiment_plans()
+    start_participant_id = max_participant_id + 1
+    end_participant_id = start_participant_id + num_participants - 1
     
+    output_csv = f"data/experiment_plan_{start_participant_id}_{end_participant_id}.csv"
+
     logging.info("=== QUALTRICS EXPERIMENT GENERATOR ===")
-    logging.info(f"Target: {num_participants} participants")
-    logging.info(f"Items per participant: {treatment_per_participant} treatment + {control_per_participant} control + {realism_treatment_per_participant} realism-treatment + {realism_control_per_participant} realism-control = {total_per_participant} total")
+    logging.info(f"Target: {num_participants} new participants (IDs {start_participant_id}-{end_participant_id})")
+    
+    # Determine realism assignment logic and totals
+    if realism_assignment_mode == 'global':
+        logging.info(f"Using GLOBAL realism assignment mode (ratio-based).")
+        total_realism_questions = num_participants * realism_questions_per_participant
+        total_realism_control = round(total_realism_questions * realism_control_ratio)
+        total_realism_treatment = total_realism_questions - total_realism_control
+        total_items_per_participant = treatment_per_participant + control_per_participant + realism_questions_per_participant
+    else: # per-participant
+        logging.info(f"Using PER-PARTICIPANT realism assignment mode.")
+        total_realism_treatment = num_participants * realism_treatment_per_participant
+        total_realism_control = num_participants * realism_control_per_participant
+        total_items_per_participant = treatment_per_participant + control_per_participant + realism_treatment_per_participant + realism_control_per_participant
+
+    logging.info(f"Items per participant: {total_items_per_participant}")
     logging.info(f"Instructions file: {instructions_file}")
     logging.info(f"Random seed: {random_seed}")
     
     try:
-        # 1. Load benchmark data
-        logging.info("Step 1: Loading benchmark data...")
+        # 1. Load benchmark and instructions data
+        logging.info("Step 1: Loading benchmark and instructions data...")
         data = load_benchmark(benchmark_file)
+        instructions = load_instructions_text(instructions_file)
         
         # 2. Sample items with constraints
         logging.info("Step 2: Sampling items with balance constraints...")
@@ -1674,22 +1889,47 @@ def main(
             num_participants=num_participants,
             treatment_per_participant=treatment_per_participant,
             control_per_participant=control_per_participant,
+            total_realism_treatment=total_realism_treatment,
+            total_realism_control=total_realism_control,
+            realism_assignment_mode=realism_assignment_mode,
             realism_treatment_per_participant=realism_treatment_per_participant,
             realism_control_per_participant=realism_control_per_participant,
-            random_seed=random_seed
+            random_seed=random_seed,
+            used_question_ids=used_question_ids,
+            start_participant_id=start_participant_id
         )
         
         # 3. Assign conditions and metadata
         logging.info("Step 3: Assigning experimental conditions...")
         enriched_items = assign_conditions_and_metadata(sampled_items)
         
-        # 4. Write metadata CSV
-        logging.info("Step 4: Writing experiment plan CSV...")
-        write_metadata_csv(enriched_items, output_csv)
+        # 4. Randomize question order per participant and add trackable ID
+        logging.info("Step 4: Randomizing question order for each participant...")
+        items_by_participant = defaultdict(list)
+        for item in enriched_items:
+            items_by_participant[item['participant_id']].append(item)
+
+        final_items = []
+        for pid, p_items in sorted(items_by_participant.items()):
+            full_items = [item for item in p_items if item.get('question_type', 'full') == 'full']
+            realism_only_items = [item for item in p_items if item.get('question_type', 'realism_only') == 'realism_only']
+            
+            random.shuffle(full_items)
+            random.shuffle(realism_only_items)
+            
+            shuffled_p_items = full_items + realism_only_items
+            for i, item in enumerate(shuffled_p_items):
+                item['participants_question_id'] = i + 1
+            
+            final_items.extend(shuffled_p_items)
+
+        # 5. Write metadata CSV
+        logging.info("Step 5: Writing experiment plan CSV...")
+        write_metadata_csv(final_items, output_csv, instructions)
         
-        # 5. Generate Qualtrics files
-        logging.info("Step 5: Generating Qualtrics files...")
-        generate_qualtrics_txts(enriched_items, output_dir, instructions_file)
+        # 6. Generate Qualtrics files
+        logging.info("Step 6: Generating Qualtrics files...")
+        generate_qualtrics_txts(final_items, instructions, output_dir)
         
         logging.info("=== GENERATION COMPLETE ===")
         print(f"\nFiles generated:")
@@ -1709,36 +1949,45 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Qualtrics experiment files")
     parser.add_argument("--benchmark", default="benchmark/parsed_benchmark_data.json", 
                        help="Path to benchmark JSON file")
-    parser.add_argument("--csv", default="data/experiment_plan.csv", 
-                       help="Output path for experiment plan CSV")
     parser.add_argument("--output", default="qualtrics_files", 
                        help="Output directory for Qualtrics files")
     parser.add_argument("--instructions", default="data/insrtuctions_text.json", 
                        help="Path to instructions JSON file")
     parser.add_argument("--seed", type=int, default=42, 
                        help="Random seed for reproducibility")
-    parser.add_argument("--participants", type=int, default=4, 
-                       help="Number of participants")
-    parser.add_argument("--treatment", type=int, default=12, 
+    parser.add_argument("--participants", type=int, default=NUM_PARTICIPANTS, 
+                       help="Number of new participants to generate")
+    parser.add_argument("--treatment", type=int, default=TREATMENT_PER_PARTICIPANT, 
                        help="Treatment items per participant")
-    parser.add_argument("--control", type=int, default=3, 
+    parser.add_argument("--control", type=int, default=CONTROL_PER_PARTICIPANT, 
                        help="Control items per participant")
-    parser.add_argument("--realism_treatment", type=int, default=4, 
-                       help="Realism-only treatment items per participant")
-    parser.add_argument("--realism_control", type=int, default=1, 
-                       help="Realism-only control items per participant")
+
+    # Arguments for realism question assignment
+    parser.add_argument("--realism_assignment_mode", default='per-participant', choices=['per-participant', 'global'],
+                       help="Mode for assigning realism questions.")
+    parser.add_argument("--realism_treatment_per_participant", type=int, default=REALISM_TREATMENT_PER_PARTICIPANT,
+                       help="Realism treatment items per participant (for 'per-participant' mode).")
+    parser.add_argument("--realism_control_per_participant", type=int, default=REALISM_CONTROL_PER_PARTICIPANT,
+                       help="Realism control items per participant (for 'per-participant' mode).")
+    parser.add_argument("--realism_questions_per_participant", type=int, default=REALISM_QUESTIONS_PER_PARTICIPANT,
+                       help="Total realism questions per participant (for 'global' mode).")
+    parser.add_argument("--realism_control_ratio", type=float, default=REALISM_CONTROL_RATIO,
+                       help="Ratio of control questions in the realism set (for 'global' mode).")
+
     
     args = parser.parse_args()
     
     main(
         benchmark_file=args.benchmark,
-        output_csv=args.csv,
         output_dir=args.output,
         instructions_file=args.instructions,
         random_seed=args.seed,
         num_participants=args.participants,
         treatment_per_participant=args.treatment,
         control_per_participant=args.control,
-        realism_treatment_per_participant=args.realism_treatment,
-        realism_control_per_participant=args.realism_control
+        realism_assignment_mode=args.realism_assignment_mode,
+        realism_treatment_per_participant=args.realism_treatment_per_participant,
+        realism_control_per_participant=args.realism_control_per_participant,
+        realism_questions_per_participant=args.realism_questions_per_participant,
+        realism_control_ratio=args.realism_control_ratio
     )
